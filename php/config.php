@@ -155,7 +155,10 @@ function verifyCSRFToken($token)
  */
 function isLoggedIn()
 {
-    return isset($_SESSION['user_id']) && isset($_SESSION['user_email']);
+    return isset($_SESSION['user_id']) &&
+        isset($_SESSION['user_email']) &&
+        isset($_SESSION['is_logged_in']) &&
+        $_SESSION['is_logged_in'] === true;
 }
 
 /**

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - FoodExpress</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 15px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>FoodExpress Login Test Page</h1>
+    
+    <div class="test-section">
+        <h2>Test Login Status</h2>
+        <button onclick="checkLoginStatus()">Check Login Status</button>
+        <div id="loginStatus"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Session</h2>
+        <button onclick="testSession()">Test Session Data</button>
+        <div id="sessionData"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Quick Login Test</h2>
+        <p>Use these test credentials:</p>
+        <ul>
+            <li><strong>Email:</strong> test@example.com</li>
+            <li><strong>Password:</strong> TestPass123</li>
+        </ul>
+        <button onclick="quickLogin()">Quick Login Test</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Navigation Links</h2>
+        <a href="index.html">Home</a> |
+        <a href="login.html">Login</a> |
+        <a href="register.html">Register</a> |
+        <a href="profile.html">Profile</a> |
+        <a href="contact.html">Contact</a>
+    </div>
+
+    <script>
+        function checkLoginStatus() {
+            fetch('php/check_login_status.php', {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('loginStatus');
+                if (data.loggedIn) {
+                    statusDiv.innerHTML = `<div class="success">✓ Logged in as: ${data.user.name} (${data.user.email})</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="error">✗ Not logged in</div>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('loginStatus').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            });
+        }
+        
+        function testSession() {
+            fetch('php/profile_handler.php', {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            })
+            .then(data => {
+                const sessionDiv = document.getElementById('sessionData');
+                if (data.includes('profile-container')) {
+                    sessionDiv.innerHTML = `<div class="success">✓ Session valid - Profile data loaded</div>`;
+                } else {
+                    sessionDiv.innerHTML = `<div class="error">✗ Session invalid or expired</div>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('sessionData').innerHTML = `<div class="error">✗ Session test failed: ${error.message}</div>`;
+            });
+        }
+        
+        function quickLogin() {
+            const formData = new FormData();
+            formData.append('email', 'test@example.com');
+            formData.append('password', 'TestPass123');
+            
+            fetch('php/login_handler.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('loginResult');
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="success">✓ Login successful! User: ${data.user.fullName}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ Login failed: ${data.error || 'Unknown error'}</div>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('loginResult').innerHTML = `<div class="error">✗ Login test failed: ${error.message}</div>`;
+            });
+        }
+        
+        // Auto-check login status on page load
+        window.addEventListener('load', function() {
+            checkLoginStatus();
+        });
+    </script>
+</body>
+</html>

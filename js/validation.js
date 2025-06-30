@@ -459,23 +459,40 @@ function submitRegistrationForm(form, fields) {
 function submitLoginForm(form, fields) {
     const submitButton = form.querySelector('button[type="submit"]');
     window.FoodExpress.showLoading(submitButton);
-    
+
     // Create FormData object
     const formData = new FormData(form);
-    
+
     // Submit form
     fetch(form.action, {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'same-origin'
     })
-    .then(response => response.text())
+    .then(response => response.json())
     .then(data => {
         window.FoodExpress.hideLoading(submitButton);
-        
-        if (data.includes('success') || data.includes('dashboard') || data.includes('profile')) {
-            window.location.href = 'profile.html';
+
+        if (data.success) {
+            // Login successful
+            window.FoodExpress.showToast('Login successful! Redirecting...', 'success');
+
+            // Update navigation immediately
+            if (window.FoodExpress.updateNavigationForLoggedInUser) {
+                window.FoodExpress.updateNavigationForLoggedInUser(data.user);
+            }
+
+            // Redirect to profile page
+            setTimeout(() => {
+                window.location.href = 'profile.html';
+            }, 1000);
         } else {
-            window.FoodExpress.showModal('errorModal');
+            // Login failed
+            if (data.lockout) {
+                window.FoodExpress.showToast('Too many failed attempts. Please try again later.', 'error');
+            } else {
+                window.FoodExpress.showModal('errorModal');
+            }
         }
     })
     .catch(error => {

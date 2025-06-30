@@ -276,6 +276,21 @@ a:hover {
     background-color: rgba(255, 107, 53, 0.1);
 }
 
+.user-menu .nav-link {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.logout-menu .nav-link {
+    color: var(--error-color);
+    font-weight: 500;
+}
+
+.logout-menu .nav-link:hover {
+    color: var(--text-white);
+    background-color: var(--error-color);
+}
+
 .theme-toggle {
     background: none;
     border: 2px solid var(--border-color);

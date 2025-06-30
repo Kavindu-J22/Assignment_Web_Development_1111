@@ -120,25 +120,85 @@
     <script>
         // Load profile content via PHP
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('php/profile_handler.php')
-                .then(response => response.text())
-                .then(data => {
-                    if (data.includes('<!DOCTYPE html>') || data.includes('<html>')) {
-                        // If PHP returns HTML (profile content), show it
-                        document.getElementById('profileContent').innerHTML = data;
-                        document.getElementById('loginPrompt').style.display = 'none';
-                    } else {
-                        // If not logged in, show login prompt
-                        document.getElementById('profileContent').style.display = 'none';
-                        document.getElementById('loginPrompt').style.display = 'block';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading profile:', error);
-                    document.getElementById('profileContent').style.display = 'none';
-                    document.getElementById('loginPrompt').style.display = 'block';
-                });
+            fetch('php/profile_handler.php', {
+                method: 'GET',
+                credentials: 'same-origin', // Include cookies/session
+                headers: {
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else if (response.status === 401) {
+                    // Not logged in
+                    throw new Error('Not authenticated');
+                } else {
+                    throw new Error('Server error');
+                }
+            })
+            .then(data => {
+                // Check if the response contains profile HTML content
+                if (data.includes('profile-container') || data.includes('profile-header')) {
+                    // Show profile content
+                    document.getElementById('profileContent').innerHTML = data;
+                    document.getElementById('loginPrompt').style.display = 'none';
+
+                    // Update navigation to show logout
+                    updateNavigationForLoggedInUser();
+                } else {
+                    // Show login prompt
+                    showLoginPrompt();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading profile:', error);
+                showLoginPrompt();
+            });
         });
+
+        function showLoginPrompt() {
+            document.getElementById('profileContent').style.display = 'none';
+            document.getElementById('loginPrompt').style.display = 'block';
+        }
+
+        function updateNavigationForLoggedInUser() {
+            // Hide login and register links, show logout
+            const navMenu = document.querySelector('.nav-menu');
+            if (navMenu) {
+                // Find and hide login/register links
+                const loginLink = navMenu.querySelector('a[href="login.html"]');
+                const registerLink = navMenu.querySelector('a[href="register.html"]');
+
+                if (loginLink) loginLink.parentElement.style.display = 'none';
+                if (registerLink) registerLink.parentElement.style.display = 'none';
+
+                // Add logout link if it doesn't exist
+                let logoutLink = navMenu.querySelector('.logout-link');
+                if (!logoutLink) {
+                    const logoutItem = document.createElement('li');
+                    logoutItem.className = 'nav-item';
+                    logoutItem.innerHTML = '<a href="#" class="nav-link logout-link" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>';
+                    navMenu.appendChild(logoutItem);
+                }
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('php/logout_handler.php', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                })
+                .then(() => {
+                    window.location.href = 'index.html';
+                })
+                .catch(() => {
+                    // Even if logout fails, redirect to home
+                    window.location.href = 'index.html';
+                });
+            }
+        }
     </script>
 </body>
 </html>

@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeModals();
     initializePasswordToggles();
     initializeFormAnimations();
-    
+    checkLoginStatus();
+
     console.log('FoodExpress website initialized successfully!');
 });
 
@@ -338,6 +339,105 @@ window.addEventListener('error', function(event) {
     // You can add error reporting here
 });
 
+// ===== LOGIN STATUS MANAGEMENT =====
+function checkLoginStatus() {
+    // Check if we're on a page that needs login status
+    const currentPage = window.location.pathname.split('/').pop();
+
+    // Skip login check for login and register pages
+    if (currentPage === 'login.html' || currentPage === 'register.html') {
+        return;
+    }
+
+    // Check login status via PHP
+    fetch('php/check_login_status.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.loggedIn) {
+            updateNavigationForLoggedInUser(data.user);
+        } else {
+            updateNavigationForGuestUser();
+        }
+    })
+    .catch(error => {
+        console.log('Login status check failed:', error);
+        updateNavigationForGuestUser();
+    });
+}
+
+function updateNavigationForLoggedInUser(user) {
+    const navMenu = document.querySelector('.nav-menu');
+    if (!navMenu) return;
+
+    // Hide login and register links
+    const loginLink = navMenu.querySelector('a[href="login.html"]');
+    const registerLink = navMenu.querySelector('a[href="register.html"]');
+
+    if (loginLink) loginLink.parentElement.style.display = 'none';
+    if (registerLink) registerLink.parentElement.style.display = 'none';
+
+    // Add user menu if it doesn't exist
+    let userMenu = navMenu.querySelector('.user-menu');
+    if (!userMenu) {
+        const userMenuItem = document.createElement('li');
+        userMenuItem.className = 'nav-item user-menu';
+        userMenuItem.innerHTML = `
+            <a href="profile.html" class="nav-link">
+                <i class="fas fa-user"></i> ${user ? user.name : 'Profile'}
+            </a>
+        `;
+        navMenu.appendChild(userMenuItem);
+
+        const logoutMenuItem = document.createElement('li');
+        logoutMenuItem.className = 'nav-item logout-menu';
+        logoutMenuItem.innerHTML = `
+            <a href="#" class="nav-link" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        `;
+        navMenu.appendChild(logoutMenuItem);
+    }
+}
+
+function updateNavigationForGuestUser() {
+    const navMenu = document.querySelector('.nav-menu');
+    if (!navMenu) return;
+
+    // Show login and register links
+    const loginLink = navMenu.querySelector('a[href="login.html"]');
+    const registerLink = navMenu.querySelector('a[href="register.html"]');
+
+    if (loginLink) loginLink.parentElement.style.display = 'block';
+    if (registerLink) registerLink.parentElement.style.display = 'block';
+
+    // Remove user menu if it exists
+    const userMenu = navMenu.querySelector('.user-menu');
+    const logoutMenu = navMenu.querySelector('.logout-menu');
+
+    if (userMenu) userMenu.remove();
+    if (logoutMenu) logoutMenu.remove();
+}
+
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        fetch('php/logout_handler.php', {
+            method: 'POST',
+            credentials: 'same-origin'
+        })
+        .then(() => {
+            updateNavigationForGuestUser();
+            window.location.href = 'index.html';
+        })
+        .catch(() => {
+            // Even if logout fails, redirect to home
+            window.location.href = 'index.html';
+        });
+    }
+}
+
 // ===== EXPORT FUNCTIONS FOR OTHER SCRIPTS =====
 window.FoodExpress = {
     showModal,
@@ -351,5 +451,9 @@ window.FoodExpress = {
     isValidPhone,
     debounce,
     setLocalStorage,
-    getLocalStorage
+    getLocalStorage,
+    checkLoginStatus,
+    updateNavigationForLoggedInUser,
+    updateNavigationForGuestUser,
+    logout
 };

@@ -6,51 +6,42 @@ require_once 'config.php';
 
 // Check if user is logged in and session is valid
 if (!isLoggedIn() || !checkSessionTimeout()) {
-    // Return unauthorized response for AJAX requests
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-        http_response_code(401);
-        echo json_encode(['error' => ERROR_ACCESS_DENIED]);
-        exit;
-    }
-    
-    // For direct access, redirect to login page
-    header('Location: ../login.html');
+    // Always return 401 for unauthorized access
+    http_response_code(401);
+    echo json_encode(['error' => ERROR_ACCESS_DENIED]);
     exit;
 }
 
 try {
     // Get user data
     $user = findUserByEmail($_SESSION['user_email']);
-    
+
     if (!$user) {
         // User not found, destroy session
         session_unset();
         session_destroy();
-        
+
         http_response_code(404);
         echo json_encode(['error' => ERROR_USER_NOT_FOUND]);
         exit;
     }
-    
+
     // Handle different request methods
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Return profile HTML content
         $profileHtml = generateProfileHTML($user);
         echo $profileHtml;
-        
     } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle profile updates (if implemented)
         handleProfileUpdate($user);
-        
     } else {
         http_response_code(405);
         echo json_encode(['error' => 'Method not allowed']);
     }
-    
 } catch (Exception $e) {
     // Log the error
     error_log("Profile error: " . $e->getMessage());
-    
+
     // Return generic error response
     http_response_code(500);
     echo json_encode(['error' => 'An unexpected error occurred. Please try again.']);
@@ -59,10 +50,11 @@ try {
 /**
  * Generate profile HTML content
  */
-function generateProfileHTML($user) {
+function generateProfileHTML($user)
+{
     $lastLogin = $user['lastLogin'] ? date('F j, Y g:i A', strtotime($user['lastLogin'])) : 'First time login';
     $memberSince = date('F j, Y', strtotime($user['registrationDate']));
-    
+
     return '
     <div class="profile-container">
         <div class="profile-header">
@@ -454,10 +446,9 @@ function generateProfileHTML($user) {
 /**
  * Handle profile updates (placeholder for future implementation)
  */
-function handleProfileUpdate($user) {
+function handleProfileUpdate($user)
+{
     // This would handle profile updates
     // For now, just return a placeholder response
     echo json_encode(['message' => 'Profile update feature coming soon!']);
 }
-
-?>
