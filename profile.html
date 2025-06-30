@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - FoodExpress | Your Account</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <i class="fas fa-utensils"></i>
+                    <span>FoodExpress</span>
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="contact.html" class="nav-link">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="login.html" class="nav-link">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="register.html" class="nav-link">Register</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="profile.html" class="nav-link active">Profile</a>
+                    </li>
+                </ul>
+                <div class="nav-toggle" id="mobile-menu">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+                <button class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="profile-section">
+            <div class="container">
+                <!-- Profile will be loaded by PHP -->
+                <div id="profileContent">
+                    <!-- Content will be loaded here -->
+                </div>
+                
+                <!-- Default content for non-logged-in users -->
+                <div id="loginPrompt" class="auth-container">
+                    <div class="auth-header">
+                        <h1 class="auth-title">Access Restricted</h1>
+                        <p class="auth-subtitle">Please log in to view your profile</p>
+                    </div>
+                    
+                    <div class="profile-prompt">
+                        <div class="prompt-icon">
+                            <i class="fas fa-user-lock"></i>
+                        </div>
+                        <p>You need to be logged in to access your profile page.</p>
+                        <div class="prompt-actions">
+                            <a href="login.html" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Log In
+                            </a>
+                            <a href="register.html" class="btn btn-secondary">
+                                <i class="fas fa-user-plus"></i>
+                                Create Account
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-utensils"></i>
+                        <span>FoodExpress</span>
+                    </div>
+                    <p class="footer-description">
+                        Your favorite food delivery service. Fast, fresh, and reliable.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="register.html">Register</a></li>
+                        <li><a href="login.html">Login</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Contact Info</h4>
+                    <div class="contact-info">
+                        <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                        <p><i class="fas fa-envelope"></i> info@foodexpress.com</p>
+                        <p><i class="fas fa-map-marker-alt"></i> 123 Food Street, City</p>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 FoodExpress. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Load profile content via PHP
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('php/profile_handler.php')
+                .then(response => response.text())
+                .then(data => {
+                    if (data.includes('<!DOCTYPE html>') || data.includes('<html>')) {
+                        // If PHP returns HTML (profile content), show it
+                        document.getElementById('profileContent').innerHTML = data;
+                        document.getElementById('loginPrompt').style.display = 'none';
+                    } else {
+                        // If not logged in, show login prompt
+                        document.getElementById('profileContent').style.display = 'none';
+                        document.getElementById('loginPrompt').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading profile:', error);
+                    document.getElementById('profileContent').style.display = 'none';
+                    document.getElementById('loginPrompt').style.display = 'block';
+                });
+        });
+    </script>
+</body>
+</html>
