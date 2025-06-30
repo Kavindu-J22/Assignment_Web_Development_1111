@@ -43,11 +43,12 @@ define('SUCCESS_CONTACT', 'Your message has been sent successfully. We will get 
 /**
  * Sanitize input data
  */
-function sanitizeInput($data) {
+function sanitizeInput($data)
+{
     if (is_array($data)) {
         return array_map('sanitizeInput', $data);
     }
-    
+
     $data = trim($data);
     $data = stripslashes($data);
     $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
@@ -57,52 +58,84 @@ function sanitizeInput($data) {
 /**
  * Validate email format
  */
-function isValidEmail($email) {
+function isValidEmail($email)
+{
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
 /**
- * Validate phone number format
+ * Validate phone number format (Sri Lankan format)
  */
-function isValidPhone($phone) {
+function isValidPhone($phone)
+{
+    // Remove all non-digit characters
     $cleaned = preg_replace('/\D/', '', $phone);
-    return strlen($cleaned) >= 10 && strlen($cleaned) <= 15;
+
+    // Sri Lankan phone number patterns:
+    // Mobile: 07XXXXXXXX (10 digits) or +94 7XXXXXXXX (12 digits with country code)
+    // Landline: 0XXXXXXXXX (10 digits) or +94 XXXXXXXXX (12 digits with country code)
+
+    // Check for mobile numbers starting with 07
+    if (preg_match('/^07[0-9]{8}$/', $cleaned)) {
+        return true;
+    }
+
+    // Check for international format mobile +94 7XXXXXXXX
+    if (preg_match('/^947[0-9]{8}$/', $cleaned)) {
+        return true;
+    }
+
+    // Check for landline numbers (area codes: 011, 021, 023, 024, 025, 026, 027, 031, 032, 033, 034, 035, 036, 037, 038, 041, 045, 047, 051, 052, 054, 055, 057, 063, 065, 066, 067, 081, 091)
+    if (preg_match('/^0(11|21|23|24|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|91)[0-9]{7}$/', $cleaned)) {
+        return true;
+    }
+
+    // Check for international format landline +94 XXXXXXXXX
+    if (preg_match('/^94(11|21|23|24|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|91)[0-9]{7}$/', $cleaned)) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
  * Validate password strength
  */
-function isValidPassword($password) {
+function isValidPassword($password)
+{
     if (strlen($password) < PASSWORD_MIN_LENGTH) {
         return false;
     }
-    
+
     // Check for at least one uppercase, one lowercase, and one number
     if (!preg_match('/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/', $password)) {
         return false;
     }
-    
+
     return true;
 }
 
 /**
  * Hash password securely
  */
-function hashPassword($password) {
+function hashPassword($password)
+{
     return password_hash($password, PASSWORD_DEFAULT);
 }
 
 /**
  * Verify password against hash
  */
-function verifyPassword($password, $hash) {
+function verifyPassword($password, $hash)
+{
     return password_verify($password, $hash);
 }
 
 /**
  * Generate CSRF token
  */
-function generateCSRFToken() {
+function generateCSRFToken()
+{
     if (!isset($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -112,21 +145,24 @@ function generateCSRFToken() {
 /**
  * Verify CSRF token
  */
-function verifyCSRFToken($token) {
+function verifyCSRFToken($token)
+{
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 /**
  * Check if user is logged in
  */
-function isLoggedIn() {
+function isLoggedIn()
+{
     return isset($_SESSION['user_id']) && isset($_SESSION['user_email']);
 }
 
 /**
  * Check session timeout
  */
-function checkSessionTimeout() {
+function checkSessionTimeout()
+{
     if (isset($_SESSION['last_activity'])) {
         if (time() - $_SESSION['last_activity'] > SESSION_TIMEOUT) {
             session_unset();
@@ -141,7 +177,8 @@ function checkSessionTimeout() {
 /**
  * Require login for protected pages
  */
-function requireLogin() {
+function requireLogin()
+{
     if (!isLoggedIn() || !checkSessionTimeout()) {
         http_response_code(401);
         echo json_encode(['error' => ERROR_ACCESS_DENIED]);
@@ -152,7 +189,8 @@ function requireLogin() {
 /**
  * Log user activity (simple logging)
  */
-function logActivity($message) {
+function logActivity($message)
+{
     $logFile = DATA_DIR . 'activity.log';
     $timestamp = date('Y-m-d H:i:s');
     $logEntry = "[$timestamp] $message" . PHP_EOL;
@@ -162,7 +200,8 @@ function logActivity($message) {
 /**
  * Create data directory if it doesn't exist
  */
-function ensureDataDirectory() {
+function ensureDataDirectory()
+{
     if (!is_dir(DATA_DIR)) {
         mkdir(DATA_DIR, 0755, true);
     }
@@ -171,82 +210,87 @@ function ensureDataDirectory() {
 /**
  * Read users from file
  */
-function readUsers() {
+function readUsers()
+{
     ensureDataDirectory();
-    
+
     if (!file_exists(USERS_FILE)) {
         return [];
     }
-    
+
     $content = file_get_contents(USERS_FILE);
     if ($content === false) {
         return [];
     }
-    
+
     $users = [];
     $lines = explode("\n", trim($content));
-    
+
     foreach ($lines as $line) {
         if (empty($line)) continue;
-        
+
         $userData = json_decode($line, true);
         if ($userData) {
             $users[] = $userData;
         }
     }
-    
+
     return $users;
 }
 
 /**
  * Write user to file
  */
-function writeUser($userData) {
+function writeUser($userData)
+{
     ensureDataDirectory();
-    
+
     $userJson = json_encode($userData) . "\n";
-    
+
     if (file_put_contents(USERS_FILE, $userJson, FILE_APPEND | LOCK_EX) === false) {
         return false;
     }
-    
+
     return true;
 }
 
 /**
  * Find user by email
  */
-function findUserByEmail($email) {
+function findUserByEmail($email)
+{
     $users = readUsers();
-    
+
     foreach ($users as $user) {
         if ($user['email'] === $email) {
             return $user;
         }
     }
-    
+
     return null;
 }
 
 /**
  * Write contact message to file
  */
-function writeContact($contactData) {
+function writeContact($contactData)
+{
     ensureDataDirectory();
-    
+
     $contactJson = json_encode($contactData) . "\n";
-    
+
     if (file_put_contents(CONTACTS_FILE, $contactJson, FILE_APPEND | LOCK_EX) === false) {
         return false;
     }
-    
+
     return true;
 }
 
 /**
  * Send JSON response
  */
-function sendJsonResponse($data, $statusCode = 200) {
+function sendJsonResponse($data, $statusCode = 200)
+{
     http_response_code($statusCode);
     header('Content-Type: application/json');
     echo json_encode($data);
@@ -256,7 +300,8 @@ function sendJsonResponse($data, $statusCode = 200) {
 /**
  * Send HTML response
  */
-function sendHtmlResponse($html, $statusCode = 200) {
+function sendHtmlResponse($html, $statusCode = 200)
+{
     http_response_code($statusCode);
     header('Content-Type: text/html');
     echo $html;
@@ -266,21 +311,22 @@ function sendHtmlResponse($html, $statusCode = 200) {
 /**
  * Rate limiting for login attempts
  */
-function checkRateLimit($email) {
+function checkRateLimit($email)
+{
     if (!isset($_SESSION['login_attempts'])) {
         $_SESSION['login_attempts'] = [];
     }
-    
+
     $attempts = &$_SESSION['login_attempts'];
     $now = time();
-    
+
     // Clean old attempts
     foreach ($attempts as $attemptEmail => $data) {
         if ($now - $data['last_attempt'] > LOCKOUT_TIME) {
             unset($attempts[$attemptEmail]);
         }
     }
-    
+
     // Check current email
     if (isset($attempts[$email])) {
         if ($attempts[$email]['count'] >= MAX_LOGIN_ATTEMPTS) {
@@ -291,24 +337,25 @@ function checkRateLimit($email) {
             }
         }
     }
-    
+
     return true;
 }
 
 /**
  * Record failed login attempt
  */
-function recordFailedLogin($email) {
+function recordFailedLogin($email)
+{
     if (!isset($_SESSION['login_attempts'])) {
         $_SESSION['login_attempts'] = [];
     }
-    
+
     $attempts = &$_SESSION['login_attempts'];
-    
+
     if (!isset($attempts[$email])) {
         $attempts[$email] = ['count' => 0, 'last_attempt' => 0];
     }
-    
+
     $attempts[$email]['count']++;
     $attempts[$email]['last_attempt'] = time();
 }
@@ -316,7 +363,8 @@ function recordFailedLogin($email) {
 /**
  * Clear login attempts for successful login
  */
-function clearLoginAttempts($email) {
+function clearLoginAttempts($email)
+{
     if (isset($_SESSION['login_attempts'][$email])) {
         unset($_SESSION['login_attempts'][$email]);
     }
@@ -332,5 +380,3 @@ date_default_timezone_set('America/New_York');
 // Set error reporting for development (disable in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
-?>

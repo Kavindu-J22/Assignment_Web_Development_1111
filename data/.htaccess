@@ -1,22 +1,5 @@
 # Deny access to all files in the data directory
-Order Deny,Allow
-Deny from all
+Require all denied
 
 # Prevent directory browsing
 Options -Indexes
-
-# Prevent access to sensitive files
-<Files "*.txt">
-    Order Deny,Allow
-    Deny from all
-</Files>
-
-<Files "*.log">
-    Order Deny,Allow
-    Deny from all
-</Files>
-
-<Files "*.json">
-    Order Deny,Allow
-    Deny from all
-</Files>

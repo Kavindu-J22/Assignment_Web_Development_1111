@@ -235,13 +235,30 @@ function smoothScrollTo(elementId) {
     }
 }
 
-// Format phone number
+// Format phone number (Sri Lankan format)
 function formatPhoneNumber(phoneNumber) {
     const cleaned = phoneNumber.replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-        return '(' + match[1] + ') ' + match[2] + '-' + match[3];
+
+    // Format mobile numbers (07XXXXXXXX)
+    if (cleaned.length === 10 && cleaned.startsWith('07')) {
+        return cleaned.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
     }
+
+    // Format landline numbers (0XXXXXXXXX)
+    if (cleaned.length === 10 && cleaned.startsWith('0')) {
+        return cleaned.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+    }
+
+    // Format international mobile (+94 7XXXXXXXX)
+    if (cleaned.length === 11 && cleaned.startsWith('947')) {
+        return '+94 ' + cleaned.substring(2).replace(/^(\d{2})(\d{3})(\d{4})$/, '$1 $2 $3');
+    }
+
+    // Format international landline (+94 XXXXXXXXX)
+    if (cleaned.length === 11 && cleaned.startsWith('94')) {
+        return '+94 ' + cleaned.substring(2).replace(/^(\d{2})(\d{3})(\d{4})$/, '$1 $2 $3');
+    }
+
     return phoneNumber;
 }
 
@@ -251,11 +268,36 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-// Validate phone number format
+// Validate phone number format (Sri Lankan format)
 function isValidPhone(phone) {
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '');
-    return phoneRegex.test(cleaned) && cleaned.length >= 10;
+
+    // Sri Lankan phone number patterns:
+    // Mobile: 07XXXXXXXX (10 digits) or +94 7XXXXXXXX (12 digits with country code)
+    // Landline: 0XXXXXXXXX (10 digits) or +94 XXXXXXXXX (12 digits with country code)
+
+    // Check for mobile numbers starting with 07
+    if (/^07[0-9]{8}$/.test(cleaned)) {
+        return true;
+    }
+
+    // Check for international format mobile +94 7XXXXXXXX
+    if (/^947[0-9]{8}$/.test(cleaned)) {
+        return true;
+    }
+
+    // Check for landline numbers (Sri Lankan area codes)
+    if (/^0(11|21|23|24|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|91)[0-9]{7}$/.test(cleaned)) {
+        return true;
+    }
+
+    // Check for international format landline +94 XXXXXXXXX
+    if (/^94(11|21|23|24|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|91)[0-9]{7}$/.test(cleaned)) {
+        return true;
+    }
+
+    return false;
 }
 
 // Debounce function for search/input

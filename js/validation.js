@@ -245,17 +245,17 @@ function validateEmail(field) {
 function validatePhone(field) {
     const value = field.value.trim();
     const errorElement = 'phoneError';
-    
+
     if (!value) {
         showError(errorElement, 'Phone number is required');
         return false;
     }
-    
+
     if (!window.FoodExpress.isValidPhone(value)) {
-        showError(errorElement, 'Please enter a valid phone number');
+        showError(errorElement, 'Please enter a valid Sri Lankan phone number (e.g., 0771234567 or +94771234567)');
         return false;
     }
-    
+
     clearError(errorElement);
     return true;
 }
@@ -263,12 +263,12 @@ function validatePhone(field) {
 function validateOptionalPhone(field) {
     const value = field.value.trim();
     const errorElement = 'phoneError';
-    
+
     if (value && !window.FoodExpress.isValidPhone(value)) {
-        showError(errorElement, 'Please enter a valid phone number');
+        showError(errorElement, 'Please enter a valid Sri Lankan phone number (e.g., 0771234567 or +94771234567)');
         return false;
     }
-    
+
     clearError(errorElement);
     return true;
 }
