@@ -130,7 +130,8 @@ function initializeContactValidation(form) {
         email: form.querySelector('#email'),
         phone: form.querySelector('#phone'),
         subject: form.querySelector('#subject'),
-        message: form.querySelector('#message')
+        message: form.querySelector('#message'),
+        rating: form.querySelector('#rating')
     };
     
     // Real-time validation
@@ -167,11 +168,13 @@ function initializeContactValidation(form) {
         fields.message.addEventListener('blur', () => validateMessage(fields.message));
         fields.message.addEventListener('input', () => clearError('messageError'));
     }
-    
+
+    // Rating is optional, no validation needed but we'll track it
+
     // Form submission
     form.addEventListener('submit', function(event) {
         event.preventDefault();
-        
+
         if (validateContactForm(fields)) {
             submitContactForm(form, fields);
         }

@@ -181,6 +181,20 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="rating" class="form-label">Rate Our Service</label>
+                                <div class="star-rating" id="starRating">
+                                    <span class="star" data-rating="1">★</span>
+                                    <span class="star" data-rating="2">★</span>
+                                    <span class="star" data-rating="3">★</span>
+                                    <span class="star" data-rating="4">★</span>
+                                    <span class="star" data-rating="5">★</span>
+                                </div>
+                                <input type="hidden" id="rating" name="rating" value="0">
+                                <div class="rating-text" id="ratingText">Click stars to rate our service</div>
+                                <span class="error-message" id="ratingError"></span>
+                            </div>
+
+                            <div class="form-group">
                                 <label class="checkbox-container">
                                     <input type="checkbox" id="newsletter" name="newsletter">
                                     <span class="checkmark"></span>
@@ -278,5 +292,53 @@
 
     <script src="js/main.js"></script>
     <script src="js/validation.js"></script>
+    <script>
+        // Star Rating Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star');
+            const ratingInput = document.getElementById('rating');
+            const ratingText = document.getElementById('ratingText');
+
+            const ratingTexts = {
+                0: 'Click stars to rate our service',
+                1: 'Poor - We need to improve',
+                2: 'Fair - Could be better',
+                3: 'Good - Satisfactory service',
+                4: 'Very Good - Great service',
+                5: 'Excellent - Outstanding service!'
+            };
+
+            stars.forEach((star, index) => {
+                // Hover effect
+                star.addEventListener('mouseenter', function() {
+                    highlightStars(index + 1, 'hover');
+                });
+
+                // Click to select rating
+                star.addEventListener('click', function() {
+                    const rating = index + 1;
+                    ratingInput.value = rating;
+                    highlightStars(rating, 'active');
+                    ratingText.textContent = ratingTexts[rating];
+                    ratingText.style.color = rating >= 4 ? '#27ae60' : rating >= 3 ? '#f39c12' : '#e74c3c';
+                });
+            });
+
+            // Reset hover effect when leaving star container
+            document.getElementById('starRating').addEventListener('mouseleave', function() {
+                const currentRating = parseInt(ratingInput.value) || 0;
+                highlightStars(currentRating, 'active');
+            });
+
+            function highlightStars(rating, className) {
+                stars.forEach((star, index) => {
+                    star.classList.remove('active', 'hover');
+                    if (index < rating) {
+                        star.classList.add(className);
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

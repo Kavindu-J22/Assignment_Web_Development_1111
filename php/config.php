@@ -16,6 +16,7 @@ define('APP_URL', 'http://localhost');
 define('DATA_DIR', __DIR__ . '/../data/');
 define('USERS_FILE', DATA_DIR . 'users.txt');
 define('CONTACTS_FILE', DATA_DIR . 'contacts.txt');
+define('RATINGS_FILE', DATA_DIR . 'ratings.txt');
 
 // ===== SECURITY SETTINGS =====
 define('PASSWORD_MIN_LENGTH', 8);
@@ -383,3 +384,92 @@ date_default_timezone_set('America/New_York');
 // Set error reporting for development (disable in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+// ===== RATING FUNCTIONS =====
+
+/**
+ * Save a rating to the ratings file
+ */
+function saveRating($rating, $email, $contactId = null)
+{
+    ensureDataDirectory();
+
+    $ratingData = [
+        'id' => uniqid('rating_', true),
+        'rating' => intval($rating),
+        'email' => $email,
+        'contactId' => $contactId,
+        'date' => date('Y-m-d H:i:s'),
+        'ipAddress' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+    ];
+
+    $ratingJson = json_encode($ratingData) . "\n";
+
+    if (file_put_contents(RATINGS_FILE, $ratingJson, FILE_APPEND | LOCK_EX) === false) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Get all ratings from the ratings file
+ */
+function getAllRatings()
+{
+    ensureDataDirectory();
+
+    if (!file_exists(RATINGS_FILE)) {
+        return [];
+    }
+
+    $content = file_get_contents(RATINGS_FILE);
+    if ($content === false) {
+        return [];
+    }
+
+    $ratings = [];
+    $lines = explode("\n", trim($content));
+
+    foreach ($lines as $line) {
+        if (empty($line)) continue;
+
+        $ratingData = json_decode($line, true);
+        if ($ratingData) {
+            $ratings[] = $ratingData;
+        }
+    }
+
+    return $ratings;
+}
+
+/**
+ * Calculate overall rating statistics
+ */
+function getOverallRating()
+{
+    $ratings = getAllRatings();
+
+    if (empty($ratings)) {
+        return [
+            'average' => 0,
+            'count' => 0,
+            'total' => 0
+        ];
+    }
+
+    $total = 0;
+    $count = count($ratings);
+
+    foreach ($ratings as $rating) {
+        $total += intval($rating['rating']);
+    }
+
+    $average = $total / $count;
+
+    return [
+        'average' => round($average, 1),
+        'count' => $count,
+        'total' => $total
+    ];
+}

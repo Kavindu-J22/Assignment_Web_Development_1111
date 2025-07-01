@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Rating System - FoodExpress</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 15px; margin: 5px; }
+        .star { font-size: 2rem; color: #ddd; cursor: pointer; }
+        .star.active { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>FoodExpress Rating System Test</h1>
+    
+    <div class="test-section">
+        <h2>Submit Test Ratings</h2>
+        <p>Click stars to submit test ratings:</p>
+        
+        <div class="star-rating" id="testStars">
+            <span class="star" data-rating="1">★</span>
+            <span class="star" data-rating="2">★</span>
+            <span class="star" data-rating="3">★</span>
+            <span class="star" data-rating="4">★</span>
+            <span class="star" data-rating="5">★</span>
+        </div>
+        
+        <button onclick="submitTestRating()">Submit Rating</button>
+        <div id="ratingResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Current Overall Rating</h2>
+        <button onclick="loadCurrentRating()">Load Current Rating</button>
+        <div id="currentRating"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Quick Test Ratings</h2>
+        <button onclick="submitQuickRating(5)">Submit 5 Stars</button>
+        <button onclick="submitQuickRating(4)">Submit 4 Stars</button>
+        <button onclick="submitQuickRating(3)">Submit 3 Stars</button>
+        <button onclick="submitQuickRating(2)">Submit 2 Stars</button>
+        <button onclick="submitQuickRating(1)">Submit 1 Star</button>
+        <div id="quickResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Navigation</h2>
+        <a href="index.html">View Homepage (with rating)</a> |
+        <a href="contact.html">Contact Page (submit rating)</a>
+    </div>
+
+    <script>
+        let selectedRating = 0;
+        
+        // Star rating functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star');
+            
+            stars.forEach((star, index) => {
+                star.addEventListener('click', function() {
+                    selectedRating = index + 1;
+                    highlightStars(selectedRating);
+                });
+            });
+        });
+        
+        function highlightStars(rating) {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                star.classList.remove('active');
+                if (index < rating) {
+                    star.classList.add('active');
+                }
+            });
+        }
+        
+        function submitTestRating() {
+            if (selectedRating === 0) {
+                document.getElementById('ratingResult').innerHTML = '<div class="error">Please select a rating first</div>';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('firstName', 'Test');
+            formData.append('lastName', 'User');
+            formData.append('email', 'test' + Date.now() + '@example.com');
+            formData.append('subject', 'general');
+            formData.append('message', 'This is a test rating submission');
+            formData.append('rating', selectedRating);
+            
+            fetch('php/contact_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('ratingResult');
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="success">✓ Rating ${selectedRating} submitted successfully!</div>`;
+                    selectedRating = 0;
+                    highlightStars(0);
+                    // Auto-load current rating
+                    setTimeout(loadCurrentRating, 500);
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ Failed to submit rating</div>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('ratingResult').innerHTML = `<div class="error">✗ Error: ${error.message}</div>`;
+            });
+        }
+        
+        function submitQuickRating(rating) {
+            const formData = new FormData();
+            formData.append('firstName', 'Quick');
+            formData.append('lastName', 'Test');
+            formData.append('email', 'quick' + Date.now() + '@example.com');
+            formData.append('subject', 'general');
+            formData.append('message', `Quick test rating of ${rating} stars`);
+            formData.append('rating', rating);
+            
+            fetch('php/contact_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('quickResult');
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="success">✓ ${rating} star rating submitted!</div>`;
+                    setTimeout(loadCurrentRating, 500);
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ Failed to submit ${rating} star rating</div>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('quickResult').innerHTML = `<div class="error">✗ Error: ${error.message}</div>`;
+            });
+        }
+        
+        function loadCurrentRating() {
+            fetch('php/get_rating.php')
+                .then(response => response.json())
+                .then(data => {
+                    const ratingDiv = document.getElementById('currentRating');
+                    if (data.success && data.rating.count > 0) {
+                        const rating = data.rating;
+                        const stars = '★'.repeat(Math.floor(rating.average)) + '☆'.repeat(5 - Math.floor(rating.average));
+                        ratingDiv.innerHTML = `
+                            <div class="success">
+                                <h3>Overall Rating: ${rating.average} / 5</h3>
+                                <p>Stars: ${stars}</p>
+                                <p>Total Reviews: ${rating.count}</p>
+                                <p>Total Points: ${rating.total}</p>
+                            </div>
+                        `;
+                    } else {
+                        ratingDiv.innerHTML = '<div class="error">No ratings yet</div>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('currentRating').innerHTML = `<div class="error">Error loading rating: ${error.message}</div>`;
+                });
+        }
+        
+        // Auto-load current rating on page load
+        window.addEventListener('load', loadCurrentRating);
+    </script>
+</body>
+</html>
